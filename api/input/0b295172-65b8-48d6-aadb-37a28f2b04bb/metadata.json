@@ -1,0 +1,13 @@
+{
+  "images": [
+    {
+      "filename": "venice_under.jpg",
+      "width": 3504,
+      "height": 2336,
+      "mode": "RGB",
+      "mean_brightness": 46.802694669888034,
+      "exposure_time_s": 0.0013333333333333333,
+      "fnumber": 6.7,
+      "iso": 100,
+      "orientation": 1,
+      "datetime_original": 
