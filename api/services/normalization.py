@@ -25,9 +25,10 @@ def normalize_set(saved_paths: List[Path], output_dir: Path, linearize: bool = F
 		arr = np.asarray(img).astype(np.float32) / 255.0
 		if linearize:
 			arr = srgb_to_linear(arr)
-			save_arr = linear_to_srgb(arr)
-		else:
-			save_arr = arr
+		# Save float array for downstream HDR (as requested)
+		np.save(output_dir / f"{p.stem}_linear.npy", arr.astype(np.float32))
+		# Save viewable PNG (convert back to sRGB if we linearized)
+		save_arr = linear_to_srgb(arr) if linearize else arr
 		save_u8 = (np.clip(save_arr, 0.0, 1.0) * 255.0 + 0.5).astype(np.uint8)
 		out_path = output_dir / (p.stem + ".png")
 		Image.fromarray(save_u8, mode="RGB").save(out_path, format="PNG", optimize=True)
