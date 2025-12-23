@@ -1,0 +1,45 @@
+{
+  "job_id": "manarola_23122025",
+  "reference_index": 1,
+  "reference": "Manarola_linear.npy",
+  "frames": [
+    {
+      "index": 0,
+      "filename": "Manarola_under_linear.npy",
+      "dx": 0,
+      "dy": 0,
+      "pyramid_costs": [
+        1121,
+        4730,
+        18998,
+        76096,
+        300529
+      ],
+      "overlap_ratio": 1.0
+    },
+    {
+      "index": 1,
+      "filename": "Manarola_linear.npy",
+      "dx": 0,
+      "dy": 0,
+      "pyramid_costs": [
+        0
+      ],
+      "overlap_ratio": 1.0
+    },
+    {
+      "index": 2,
+      "filename": "Manarola_over_linear.npy",
+      "dx": 0,
+      "dy": 0,
+      "pyramid_costs": [
+        4462,
+        18459,
+        74796,
+        305088,
+        1262179
+      ],
+      "overlap_ratio": 1.0
+    }
+  ]
+}
