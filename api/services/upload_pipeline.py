@@ -71,9 +71,12 @@ def run_pipeline(job_id: str, scene: str, files_meta: List[Dict[str, Any]], line
 			"step": "Normalize Images",
 			"metadata": metadata_path,
 		})
-		# Save normalized outputs into a separate folder under api/normalized/<job_id>/
+		# Save normalized outputs:
+		# - PNGs to api/normalized/<job_id>/
+		# - Linear float arrays to api/linear/<job_id>/
 		norm_dir = Path("api/normalized") / job_id
-		norm_out = normalize_set(sorted_saved, norm_dir, linearize=linearize)
+		linear_dir = Path("api/linear") / job_id
+		norm_out = normalize_set(sorted_saved, norm_dir, linear_dir, linearize=linearize)
 
 		# 4) Align normalized linear arrays using MTB (translation)
 		write_status(job_id, {
@@ -84,8 +87,9 @@ def run_pipeline(job_id: str, scene: str, files_meta: List[Dict[str, Any]], line
 			"proposed_order": proposed_order,
 			"validation": validation,
 			"normalized": norm_out,
+			"linear_dir": str(linear_dir),
 		})
-		npy_paths = [norm_dir / f"{p.stem}_linear.npy" for p in sorted_saved]
+		npy_paths = [linear_dir / f"{p.stem}_linear.npy" for p in sorted_saved]
 		ref_index = len(npy_paths) // 2
 		align_dir = Path("api/aligned") / job_id
 		align_res = align_set(job_id, npy_paths, ref_index, align_dir, save_png=False)
@@ -101,6 +105,7 @@ def run_pipeline(job_id: str, scene: str, files_meta: List[Dict[str, Any]], line
 			"proposed_order": proposed_order,
 			"validation": validation,
 			"normalized": norm_out,
+			"linear_dir": str(linear_dir),
 			"aligned": aligned_paths,
 			"transforms": transforms_path,
 		})

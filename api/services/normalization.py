@@ -6,8 +6,9 @@ from PIL import Image
 from api.services.image_utils import apply_exif_orientation, choose_common_size, srgb_to_linear, linear_to_srgb
 
 
-def normalize_set(saved_paths: List[Path], output_dir: Path, linearize: bool = False) -> List[str]:
-	output_dir.mkdir(parents=True, exist_ok=True)
+def normalize_set(saved_paths: List[Path], png_output_dir: Path, linear_output_dir: Path, linearize: bool = False) -> List[str]:
+	png_output_dir.mkdir(parents=True, exist_ok=True)
+	linear_output_dir.mkdir(parents=True, exist_ok=True)
 	images = []
 	sizes = []
 	for p in saved_paths:
@@ -25,12 +26,12 @@ def normalize_set(saved_paths: List[Path], output_dir: Path, linearize: bool = F
 		arr = np.asarray(img).astype(np.float32) / 255.0
 		if linearize:
 			arr = srgb_to_linear(arr)
-		# Save float array for downstream HDR (as requested)
-		np.save(output_dir / f"{p.stem}_linear.npy", arr.astype(np.float32))
+		# Save float array for downstream HDR in separate folder
+		np.save(linear_output_dir / f"{p.stem}_linear.npy", arr.astype(np.float32))
 		# Save viewable PNG (convert back to sRGB if we linearized)
 		save_arr = linear_to_srgb(arr) if linearize else arr
 		save_u8 = (np.clip(save_arr, 0.0, 1.0) * 255.0 + 0.5).astype(np.uint8)
-		out_path = output_dir / (p.stem + ".png")
+		out_path = png_output_dir / (p.stem + ".png")
 		Image.fromarray(save_u8, mode="RGB").save(out_path, format="PNG", optimize=True)
 		out_paths.append(str(out_path))
 	return out_paths

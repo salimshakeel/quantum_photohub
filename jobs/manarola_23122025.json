@@ -1,0 +1,30 @@
+{
+  "job_id": "manarola_23122025",
+  "status": "completed",
+  "step": "Done",
+  "metadata": "api\\input\\manarola_23122025\\metadata.json",
+  "proposed_order": [
+    "Manarola_under.jpg",
+    "Manarola.jpg",
+    "Manarola_over.jpg"
+  ],
+  "validation": {
+    "same_resolution": true,
+    "unique_resolutions": [
+      "6720x4480"
+    ],
+    "exif_orientations_present": [],
+    "orientation_fixed_from_exif": false
+  },
+  "normalized": [
+    "api\\normalized\\manarola_23122025\\Manarola_under.png",
+    "api\\normalized\\manarola_23122025\\Manarola.png",
+    "api\\normalized\\manarola_23122025\\Manarola_over.png"
+  ],
+  "aligned": [
+    "api\\aligned\\manarola_23122025\\Manarola_under_aligned.npy",
+    "api\\aligned\\manarola_23122025\\Manarola_aligned.npy",
+    "api\\aligned\\manarola_23122025\\Manarola_over_aligned.npy"
+  ],
+  "transforms": "api\\aligned\\manarola_23122025\\transforms.json"
+}

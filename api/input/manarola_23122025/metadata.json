@@ -1,0 +1,40 @@
+{
+  "images": [
+    {
+      "filename": "Manarola.jpg",
+      "width": 6720,
+      "height": 4480,
+      "mode": "RGB",
+      "mean_brightness": 98.09793799160289,
+      "exposure_time_s": 2.5,
+      "fnumber": 22.0,
+      "iso": 50,
+      "orientation": null,
+      "datetime_original": "2017:05:01 19:23:08"
+    },
+    {
+      "filename": "Manarola_over.jpg",
+      "width": 6720,
+      "height": 4480,
+      "mode": "RGB",
+      "mean_brightness": 166.93438818691538,
+      "exposure_time_s": 6.0,
+      "fnumber": 20.0,
+      "iso": 50,
+      "orientation": null,
+      "datetime_original": "2017:05:01 19:22:36"
+    },
+    {
+      "filename": "Manarola_under.jpg",
+      "width": 6720,
+      "height": 4480,
+      "mode": "RGB",
+      "mean_brightness": 54.35492679102891,
+      "exposure_time_s": 0.8,
+      "fnumber": 20.0,
+      "iso": 50,
+      "orientation": null,
+      "datetime_original": "2017:05:01 19:23:34"
+    }
+  ]
+}

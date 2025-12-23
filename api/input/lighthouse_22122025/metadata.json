@@ -1,0 +1,40 @@
+{
+  "images": [
+    {
+      "filename": "Lighthouse.jpg",
+      "width": 1800,
+      "height": 1198,
+      "mode": "RGB",
+      "mean_brightness": 144.6592125765164,
+      "exposure_time_s": 0.1,
+      "fnumber": 9.0,
+      "iso": 500,
+      "orientation": 1,
+      "datetime_original": "2009:08:17 05:14:19"
+    },
+    {
+      "filename": "Lighthouse_over.jpg",
+      "width": 1800,
+      "height": 1198,
+      "mode": "RGB",
+      "mean_brightness": 212.6282197180486,
+      "exposure_time_s": 0.1,
+      "fnumber": 9.0,
+      "iso": 500,
+      "orientation": 1,
+      "datetime_original": "2009:08:17 05:14:19"
+    },
+    {
+      "filename": "Lighthouse_under.jpg",
+      "width": 1800,
+      "height": 1198,
+      "mode": "RGB",
+      "mean_brightness": 68.88390048228528,
+      "exposure_time_s": 0.1,
+      "fnumber": 9.0,
+      "iso": 500,
+      "orientation": 1,
+      "datetime_original": "2009:08:17 05:14:19"
+    }
+  ]
+}

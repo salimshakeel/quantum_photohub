@@ -1,0 +1,26 @@
+{
+  "job_id": "lighthouse_22122025",
+  "status": "completed",
+  "step": "Done",
+  "metadata": "api\\input\\lighthouse_22122025\\metadata.json",
+  "proposed_order": [
+    "Lighthouse.jpg",
+    "Lighthouse_over.jpg",
+    "Lighthouse_under.jpg"
+  ],
+  "validation": {
+    "same_resolution": true,
+    "unique_resolutions": [
+      "1800x1198"
+    ],
+    "exif_orientations_present": [
+      1
+    ],
+    "orientation_fixed_from_exif": false
+  },
+  "normalized": [
+    "api\\normalized\\lighthouse_22122025\\Lighthouse.png",
+    "api\\normalized\\lighthouse_22122025\\Lighthouse_over.png",
+    "api\\normalized\\lighthouse_22122025\\Lighthouse_under.png"
+  ]
+}
