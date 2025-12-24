@@ -1,0 +1,17 @@
+# Python env/build
+venv/
+.env/
+__pycache__/
+*.pyc
+
+# Generated artifacts
+api/input/
+api/normalized/
+api/linear/
+api/aligned/
+hdr_pipeline/preprocessed/
+hdr_pipeline/hdr_results/
+jobs/
+
+# Large arrays
+*.npy
