@@ -49,7 +49,7 @@ def _bytes_to_str(v: Any) -> Optional[str]:
 
 def _to_int_safe(v: Any) -> Optional[int]:
 	if v is None:
-	 return None
+		return None
 	if isinstance(v, (int,)):
 		return v
 	if isinstance(v, (list, tuple)) and v:
