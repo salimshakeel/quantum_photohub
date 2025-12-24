@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import List
 import numpy as np
 from PIL import Image
+import pandas as pd
 from api.services.image_utils import apply_exif_orientation, choose_common_size, srgb_to_linear, linear_to_srgb
 
 
