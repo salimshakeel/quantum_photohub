@@ -67,7 +67,7 @@ def result(job_id: str):
 		"normalized": data.get("normalized", []),
 		"linear_dir": data.get("linear_dir"),
 		"aligned": data.get("aligned", []),
-		"previews": data.get("previews", []),
-		
+		"transforms": data.get("transforms"),
+		"fused": data.get("fused"),
 	}
 
