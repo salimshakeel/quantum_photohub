@@ -5,6 +5,7 @@ from api.services.status_store import write_status
 from api.services.normalization import normalize_set
 from api.services.metadata import extract_metadata, write_metadata_json
 from api.services.alignment import align_set
+from api.services.fusion import run_exposure_fusion_from_aligned
 
 
 def run_pipeline(job_id: str, scene: str, files_meta: List[Dict[str, Any]], linearize: bool) -> None:
@@ -96,7 +97,23 @@ def run_pipeline(job_id: str, scene: str, files_meta: List[Dict[str, Any]], line
 		aligned_paths: List[str] = list(align_res.get("aligned_paths", []))  # type: ignore[assignment]
 		transforms_path: str = str(align_res.get("transforms", ""))
 
-		# 5) Complete
+		# 5) Exposure Fusion (LDR)
+		write_status(job_id, {
+			"job_id": job_id,
+			"status": "fusing",
+			"step": "Exposure Fusion",
+			"metadata": metadata_path,
+			"proposed_order": proposed_order,
+			"validation": validation,
+			"normalized": norm_out,
+			"linear_dir": str(linear_dir),
+			"aligned": aligned_paths,
+			"transforms": transforms_path,
+		})
+		fused_dir = Path("api/fused") / job_id
+		fused_path = run_exposure_fusion_from_aligned([Path(p) for p in aligned_paths], fused_dir / "fused.png")
+
+		# 6) Complete
 		write_status(job_id, {
 			"job_id": job_id,
 			"status": "completed",
@@ -108,6 +125,7 @@ def run_pipeline(job_id: str, scene: str, files_meta: List[Dict[str, Any]], line
 			"linear_dir": str(linear_dir),
 			"aligned": aligned_paths,
 			"transforms": transforms_path,
+			"fused": fused_path,
 		})
 	except Exception as e:
 		write_status(job_id, {"job_id": job_id, "status": "error", "error": str(e)})
