@@ -28,7 +28,7 @@ def _saturation_weight(img_rgb: np.ndarray) -> np.ndarray:
 	return np.std(img_rgb, axis=2).astype(np.float32) + 1e-12
 
 
-def _well_exposed_weight(img_rgb: np.ndarray, sigma: float = 0.2) -> np.ndarray:
+def _well_exposed_weight(img_rgb: np.ndarray, sigma: float = 0.3) -> np.ndarray:
 	# product of per-channel Gaussians around 0.5
 	c = np.exp(-0.5 * ((img_rgb - 0.5) ** 2) / (sigma ** 2))
 	w = c[..., 0] * c[..., 1] * c[..., 2]
@@ -37,8 +37,19 @@ def _well_exposed_weight(img_rgb: np.ndarray, sigma: float = 0.2) -> np.ndarray:
 
 def _normalize_weights(weights: List[np.ndarray]) -> List[np.ndarray]:
 	stack = np.stack(weights, axis=0)  # [N,H,W]
-	den = np.sum(stack, axis=0, keepdims=False) + 1e-12
-	return [(w / den).astype(np.float32) for w in weights]
+	den = np.sum(stack, axis=0, keepdims=False)
+	tiny = 1e-6
+	# safe inverse with fallback to zero
+	inv = np.divide(1.0, den, out=np.zeros_like(den, dtype=np.float32), where=den > tiny)
+	norm = [(w * inv).astype(np.float32) for w in weights]
+	# if denominator is tiny, fall back to uniform weights
+	if len(weights) > 0:
+		uniform = np.float32(1.0 / float(len(weights)))
+		mask = den <= tiny
+		if np.any(mask):
+			for i in range(len(norm)):
+				norm[i][mask] = uniform
+	return norm
 
 
 def _gaussian_pyramid(img: np.ndarray, levels: int) -> List[np.ndarray]:
@@ -69,14 +80,15 @@ def _collapse_laplacian_pyr(lp: List[np.ndarray]) -> np.ndarray:
 	return img
 
 
-def exposure_fusion_srgb(images_srgb: List[np.ndarray], alpha: float = 1.0, beta: float = 1.0, gamma: float = 1.0, levels: int = 6) -> np.ndarray:
+def exposure_fusion_srgb(images_srgb: List[np.ndarray], alpha: float = 1.0, beta: float = 1.0, gamma: float = 1.0, levels: int = 7) -> np.ndarray:
 	# weights
 	weights: List[np.ndarray] = []
+	w_floor = 1e-3  # prevent weight collapse in flat/bright regions
 	for img in images_srgb:
 		wc = _contrast_weight(img) ** alpha
 		ws = _saturation_weight(img) ** beta
 		we = _well_exposed_weight(img) ** gamma
-		w = (wc * ws * we).astype(np.float32)
+		w = (wc * ws * we + w_floor).astype(np.float32)
 		weights.append(w)
 	weights = _normalize_weights(weights)
 
@@ -95,6 +107,8 @@ def exposure_fusion_srgb(images_srgb: List[np.ndarray], alpha: float = 1.0, beta
 		fused_lp.append(acc.astype(np.float32))
 
 	fused = _collapse_laplacian_pyr(fused_lp)
+	# guard numerics and clamp
+	fused = np.nan_to_num(fused, nan=0.0, posinf=1.0, neginf=0.0).astype(np.float32)
 	return np.clip(fused, 0.0, 1.0).astype(np.float32)
 
 
