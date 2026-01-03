@@ -4,9 +4,14 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
+import os
+# Try to enable OpenEXR support in OpenCV if available
+os.environ.setdefault("OPENCV_IO_ENABLE_OPENEXR", "1")
+
 import cv2
 import numpy as np
 from PIL import Image
+from api.tone_map_technique.reinhard import tonemap_reinhard_linear
 
 
 def _read_times_from_metadata(metadata_path: Path, ordered_filenames: List[str]) -> np.ndarray:
@@ -111,9 +116,36 @@ def merge_debevec(job_id: str, norm_png_paths: List[Path], metadata_path: Path, 
 	merger = cv2.createMergeDebevec()
 	hdr = merger.process(ldr_imgs, times, response)  # float32 linear radiance (BGR)
 
-	# Save HDR as OpenEXR (float32). If EXR not supported, fallback to .hdr by caller.
-	hdr_path = out_dir / "radiance.exr"
-	cv2.imwrite(str(hdr_path), hdr)
+	# Save HDR: prefer EXR; if not supported, fallback to Radiance .hdr
+	exr_path = out_dir / "radiance.exr"
+	wrote_exr = False
+	try:
+		wrote_exr = bool(cv2.imwrite(str(exr_path), hdr))
+	except Exception:
+		wrote_exr = False
+	if wrote_exr:
+		hdr_path = exr_path
+	else:
+		hdr_path = out_dir / "radiance.hdr"
+		ok = cv2.imwrite(str(hdr_path), hdr)
+		if not ok:
+			raise RuntimeError("Failed to write HDR output (.exr disabled and .hdr write failed).")
+
+	# Tone-map preview (Reinhard) from in-memory HDR (avoid EXR/HDR readbacks)
+	hdr_rgb = cv2.cvtColor(hdr, cv2.COLOR_BGR2RGB).astype(np.float32)
+	# Improved defaults: higher key, highlight shoulder, percentile clipping, slight contrast
+	srgb_tm = tonemap_reinhard_linear(
+		hdr_rgb,
+		key=0.30,
+		white=4.5,
+		gamma=2.2,
+		exclude_low_pct=0.0,
+		exclude_high_pct=0.01,
+		contrast=1.12,
+	)  # returns sRGB [0,1]
+	u8 = (np.clip(srgb_tm, 0.0, 1.0) * 255.0 + 0.5).astype(np.uint8)
+	tonemapped_path = out_dir / "tonemapped.png"
+	Image.fromarray(u8, mode="RGB").save(str(tonemapped_path), format="PNG", optimize=True)
 
 	# Minimal metrics (inputs, times)
 	metrics = {"num_inputs": len(ldr_imgs), "times": [float(t) for t in times]}
@@ -122,6 +154,7 @@ def merge_debevec(job_id: str, norm_png_paths: List[Path], metadata_path: Path, 
 
 	return {
 		"hdr": str(hdr_path),
+		"tonemapped": str(tonemapped_path),
 		"metrics": str(out_dir / "metrics.json"),
 	}
 
