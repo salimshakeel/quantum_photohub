@@ -10,19 +10,40 @@ from PIL import Image
 from api.services.image_utils import linear_to_srgb
 
 
-def _compute_log_average_luminance(lum: np.ndarray, epsilon: float = 1e-6) -> float:
+def _compute_log_average_luminance(
+	lum: np.ndarray,
+	epsilon: float = 1e-6,
+	exclude_low_pct: float = 0.01,
+	exclude_high_pct: float = 0.02,
+) -> float:
 	"""
-	Log-average luminance to avoid bias from very bright pixels.
+	Log-average luminance with optional percentile clipping to reduce
+	influence from extreme shadows/highlights.
 	"""
-	lum_clamped = np.clip(lum, epsilon, None)
+	l = lum.astype(np.float32).reshape(-1)
+	if 0.0 < exclude_low_pct < 0.5:
+		low = np.percentile(l, exclude_low_pct * 100.0)
+	else:
+		low = None
+	if 0.0 < exclude_high_pct < 0.5:
+		high = np.percentile(l, 100.0 * (1.0 - exclude_high_pct))
+	else:
+		high = None
+	if low is not None and high is not None and high > low:
+		mask = (l >= low) & (l <= high)
+		l = l[mask] if np.any(mask) else l
+	lum_clamped = np.clip(l, epsilon, None)
 	return float(np.exp(np.mean(np.log(lum_clamped))))
 
 
 def tonemap_reinhard_linear(
 	hdr_linear_rgb: np.ndarray,
-	key: float = 0.18,
-	white: Optional[float] = None,
+	key: float = 0.45,
+	white: Optional[float] = 3.0,
 	gamma: float = 2.2,
+	exclude_low_pct: float = 0.01,
+	exclude_high_pct: float = 0.02,
+	contrast: float = 1.05,
 ) -> np.ndarray:
 	"""
 	Apply Reinhard global tone mapping to a linear-light HDR RGB image.
@@ -35,7 +56,7 @@ def tonemap_reinhard_linear(
 
 	# Luminance in linear light (Rec.709 coefficients)
 	L = 0.2126 * hdr[..., 0] + 0.7152 * hdr[..., 1] + 0.0722 * hdr[..., 2]
-	L_bar = _compute_log_average_luminance(L)
+	L_bar = _compute_log_average_luminance(L, exclude_low_pct=exclude_low_pct, exclude_high_pct=exclude_high_pct)
 
 	# Scale scene by key
 	L_s = (key / max(L_bar, 1e-6)) * L
@@ -57,15 +78,22 @@ def tonemap_reinhard_linear(
 	if abs(gamma - 2.2) > 1e-3:
 		out_srgb = np.clip(out_srgb ** (1.0 / gamma), 0.0, 1.0)
 
+	# Subtle global contrast boost to counter hazy look
+	if abs(contrast - 1.0) > 1e-3:
+		out_srgb = np.clip((out_srgb - 0.5) * contrast + 0.5, 0.0, 1.0)
+
 	return out_srgb.astype(np.float32)
 
 
 def tonemap_reinhard_file(
 	hdr_path: Path,
 	out_png_path: Path,
-	key: float = 0.18,
-	white: Optional[float] = None,
+	key: float = 0.45,
+	white: Optional[float] = 3.0,
 	gamma: float = 2.2,
+	exclude_low_pct: float = 0.01,
+	exclude_high_pct: float = 0.02,
+	contrast: float = 1.05,
 ) -> str:
 	"""
 	Load an HDR file (EXR/HDR) as float32 (BGR from OpenCV), convert to RGB,
@@ -78,7 +106,15 @@ def tonemap_reinhard_file(
 		raise RuntimeError(f"Failed to read HDR: {hdr_path}")
 	img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB).astype(np.float32)
 
-	out_srgb = tonemap_reinhard_linear(img_rgb, key=key, white=white, gamma=gamma)
+	out_srgb = tonemap_reinhard_linear(
+		img_rgb,
+		key=key,
+		white=white,
+		gamma=gamma,
+		exclude_low_pct=exclude_low_pct,
+		exclude_high_pct=exclude_high_pct,
+		contrast=contrast,
+	)
 	u8 = (np.clip(out_srgb, 0.0, 1.0) * 255.0 + 0.5).astype(np.uint8)
 	out_png_path.parent.mkdir(parents=True, exist_ok=True)
 	Image.fromarray(u8, mode="RGB").save(str(out_png_path), format="PNG", optimize=True)
