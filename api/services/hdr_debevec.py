@@ -12,6 +12,7 @@ import cv2
 import numpy as np
 from PIL import Image
 from api.tone_map_technique.reinhard import tonemap_reinhard_linear
+from api.tone_map_technique.drago import tonemap_drago_linear_bgr
 
 
 def _read_times_from_metadata(metadata_path: Path, ordered_filenames: List[str]) -> np.ndarray:
@@ -131,20 +132,13 @@ def merge_debevec(job_id: str, norm_png_paths: List[Path], metadata_path: Path, 
 		if not ok:
 			raise RuntimeError("Failed to write HDR output (.exr disabled and .hdr write failed).")
 
-	# Tone-map preview (Reinhard) from in-memory HDR (avoid EXR/HDR readbacks)
-	hdr_rgb = cv2.cvtColor(hdr, cv2.COLOR_BGR2RGB).astype(np.float32)
-	# Improved defaults: higher key, highlight shoulder, percentile clipping, slight contrast
-	srgb_tm = tonemap_reinhard_linear(
-		hdr_rgb,
-		key=0.30,
-		white=4.5,
-		gamma=2.2,
-		exclude_low_pct=0.0,
-		exclude_high_pct=0.01,
-		contrast=1.12,
-	)  # returns sRGB [0,1]
+	# Tone-map preview: try Drago (better for strong highlights). If you want Reinhard, swap call.
+	srgb_tm = tonemap_drago_linear_bgr(hdr, gamma=2.2, saturation=1.0, bias=0.80)  # returns sRGB [0,1]
 	u8 = (np.clip(srgb_tm, 0.0, 1.0) * 255.0 + 0.5).astype(np.uint8)
-	tonemapped_path = out_dir / "tonemapped.png"
+	# Save tonemapped to a separate folder to avoid confusion with HDR outputs
+	tone_dir = Path("api/tonemapped_dm") / job_id
+	tone_dir.mkdir(parents=True, exist_ok=True)
+	tonemapped_path = tone_dir / "tonemapped.png"
 	Image.fromarray(u8, mode="RGB").save(str(tonemapped_path), format="PNG", optimize=True)
 
 	# Minimal metrics (inputs, times)
