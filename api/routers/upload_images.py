@@ -69,6 +69,7 @@ def result(job_id: str):
 		"metadata": data.get("metadata"),
 		"proposed_order": data.get("proposed_order", []),
 		"validation": data.get("validation", {}),
+		"method": data.get("method"),
 		"normalized": data.get("normalized", []),
 		"linear_dir": data.get("linear_dir"),
 		"aligned": data.get("aligned", []),
