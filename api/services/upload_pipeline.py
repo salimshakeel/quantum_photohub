@@ -7,6 +7,7 @@ from api.services.metadata import extract_metadata, write_metadata_json
 from api.services.alignment import align_set
 from api.services.fusion import run_exposure_fusion_from_aligned
 from api.services.hdr_debevec import merge_debevec
+from api.services.hdr_robertson import merge_robertson
 
 
 def run_pipeline(job_id: str, scene: str, files_meta: List[Dict[str, Any]], linearize: bool, method: str = "fusion") -> None:
@@ -98,7 +99,8 @@ def run_pipeline(job_id: str, scene: str, files_meta: List[Dict[str, Any]], line
 		aligned_paths: List[str] = list(align_res.get("aligned_paths", []))  # type: ignore[assignment]
 		transforms_path: str = str(align_res.get("transforms", ""))
 
-		if (method or "fusion").lower() == "dm":
+		mlower = (method or "fusion").lower()
+		if mlower == "dm":
 			# 5a) Debevec–Malik HDR (DM-only mode)
 			write_status(job_id, {
 				"job_id": job_id,
@@ -131,6 +133,38 @@ def run_pipeline(job_id: str, scene: str, files_meta: List[Dict[str, Any]], line
 				"hdr_exr": dm_res.get("hdr"),
 				"hdr_tonemapped": dm_res.get("tonemapped"),
 				"hdr_metrics": dm_res.get("metrics"),
+			})
+		elif mlower in ("rober", "dm_robertson", "robertson"):
+			# 5c) Robertson HDR (JPEG-friendly)
+			write_status(job_id, {
+				"job_id": job_id,
+				"status": "hdr_merging",
+				"step": "HDR Merge (Robertson)",
+				"metadata": metadata_path,
+				"proposed_order": proposed_order,
+				"validation": validation,
+				"normalized": norm_out,
+				"linear_dir": str(linear_dir),
+				"aligned": aligned_paths,
+				"transforms": transforms_path,
+			})
+			norm_png_paths = [Path(p) for p in norm_out]
+			hdr_dir = Path("api/hdr_robertson") / job_id
+			rob_res = merge_robertson(job_id, norm_png_paths, Path(metadata_path), Path(transforms_path), hdr_dir)
+			write_status(job_id, {
+				"job_id": job_id,
+				"status": "completed",
+				"step": "Done",
+				"metadata": metadata_path,
+				"proposed_order": proposed_order,
+				"validation": validation,
+				"normalized": norm_out,
+				"linear_dir": str(linear_dir),
+				"aligned": aligned_paths,
+				"transforms": transforms_path,
+				"hdr_exr": rob_res.get("hdr"),
+				"hdr_tonemapped": rob_res.get("tonemapped"),
+				"hdr_metrics": rob_res.get("metrics"),
 			})
 		else:
 			# 5b) Exposure Fusion (default)
