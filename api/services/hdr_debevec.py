@@ -13,6 +13,7 @@ import numpy as np
 from PIL import Image
 from api.tone_map_technique.reinhard import tonemap_reinhard_linear
 from api.tone_map_technique.drago import tonemap_drago_linear_bgr
+from api.services.image_utils import srgb_to_linear
 
 
 def _read_times_from_metadata(metadata_path: Path, ordered_filenames: List[str]) -> np.ndarray:
